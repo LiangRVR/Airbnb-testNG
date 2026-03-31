@@ -1,0 +1,33 @@
+# Common Java / Maven ignores
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# VS Code
+.vscode/
+
+# Screenshots captured on test failure
+target/screenshots/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Maven wrapper (optional — remove if you use mvnw)
+# .mvn/
+# mvnw
+# mvnw.cmd

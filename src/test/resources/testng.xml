@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<!--
+  Combined TestNG suite for the Airbnb Selenium automation project.
+
+  Run all tests  : mvn test
+  Run one class  : mvn test -Dtest=HomePageSmokeTests
+  Run one group  : mvn test -Dgroups=smoke
+-->
+<suite name="Airbnb Test Suite" verbose="1" parallel="none">
+
+    <listeners>
+        <listener class-name="airbnb.listeners.TestListener"/>
+    </listeners>
+
+    <!-- ── Smoke ─────────────────────────────────────────────────── -->
+    <test name="Homepage Smoke Tests">
+        <groups>
+            <run>
+                <include name="smoke"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="airbnb.tests.HomePageSmokeTests"/>
+            <class name="airbnb.tests.NavigationFooterTests"/>
+        </classes>
+    </test>
+
+    <!-- ── Functional ────────────────────────────────────────────── -->
+    <test name="Destination Search Tests">
+        <classes>
+            <class name="airbnb.tests.DestinationSearchTests"/>
+        </classes>
+    </test>
+
+    <test name="Date Picker Tests">
+        <classes>
+            <class name="airbnb.tests.DatePickerTests"/>
+        </classes>
+    </test>
+
+    <test name="Guest Selector Tests">
+        <classes>
+            <class name="airbnb.tests.GuestSelectorTests"/>
+        </classes>
+    </test>
+
+    <!-- ── Regression ────────────────────────────────────────────── -->
+    <test name="Search Results Tests">
+        <classes>
+            <class name="airbnb.tests.SearchResultsTests"/>
+        </classes>
+    </test>
+
+    <test name="Filter Tests">
+        <classes>
+            <class name="airbnb.tests.FilterTests"/>
+        </classes>
+    </test>
+
+    <test name="Listing Details Tests">
+        <classes>
+            <class name="airbnb.tests.ListingDetailsTests"/>
+        </classes>
+    </test>
+
+</suite>
