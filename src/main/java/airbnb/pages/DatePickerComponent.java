@@ -33,6 +33,12 @@ public class DatePickerComponent {
     // No container data-testid exists — detect by presence of day cells
     private static final By CALENDAR_CONTAINER = CHECKIN_BTN; // kept for isCalendarOpen() fallback
 
+    // Expanded-panel date tab that appears after clicking the compact
+    // 'little-search-date' trigger
+    private static final By EXPANDED_DATE_TAB = By.cssSelector(
+            "[data-testid='expanded-searchbar-dates-calendar-tab']," +
+                    "[data-testid='structured-search-input-field-split-dates-0']");
+
     // Day cells: aria-label format "1, Sunday, March 2026. <status>"
     // Matched by presence of ", " (day/dayname separator) AND " 202" (year prefix)
     private static final By DAY_CELLS = By
@@ -58,8 +64,20 @@ public class DatePickerComponent {
     public void openCheckIn() {
         WebElement btn = WaitUtils.waitForVisible(driver, CHECKIN_BTN);
         ElementUtils.jsClick(driver, btn);
-        // Wait for at least one day-cell button to be present before returning
-        WaitUtils.waitForPresence(driver, DAY_CELLS);
+        // Quick check: did the click open the calendar directly?
+        // (e.g. already on the expanded panel, or the calendar tab was itself clicked)
+        if (!WaitUtils.waitForPresence(driver, DAY_CELLS, 4)) {
+            // Fallback: the compact 'little-search-date' trigger only expanded the
+            // search panel — wait for the date tab to become clickable, then click it.
+            try {
+                WebElement dateTab = WaitUtils.waitForClickable(driver, EXPANDED_DATE_TAB);
+                ElementUtils.jsClick(driver, dateTab);
+            } catch (TimeoutException ignored) {
+                // Expanded date tab not found; nothing more we can do
+            }
+            // Final wait for calendar cells with full configured timeout
+            WaitUtils.waitForPresence(driver, DAY_CELLS);
+        }
     }
 
     public void openCheckOut() {

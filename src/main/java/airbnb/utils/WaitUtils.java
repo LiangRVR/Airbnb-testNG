@@ -12,7 +12,8 @@ import java.time.Duration;
  */
 public final class WaitUtils {
 
-    private WaitUtils() {}
+    private WaitUtils() {
+    }
 
     public static WebDriverWait getWait(WebDriver driver) {
         return new WebDriverWait(driver, Duration.ofSeconds(airbnb.utils.ConfigReader.getExplicitWait()));
@@ -41,6 +42,16 @@ public final class WaitUtils {
     public static boolean waitForPresence(WebDriver driver, By locator) {
         try {
             getWait(driver).until(ExpectedConditions.presenceOfElementLocated(locator));
+            return true;
+        } catch (TimeoutException e) {
+            return false;
+        }
+    }
+
+    public static boolean waitForPresence(WebDriver driver, By locator, int timeoutSeconds) {
+        try {
+            new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds))
+                    .until(ExpectedConditions.presenceOfElementLocated(locator));
             return true;
         } catch (TimeoutException e) {
             return false;
