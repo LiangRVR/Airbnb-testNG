@@ -12,34 +12,32 @@ import java.util.List;
  * Represents the unified search bar / panel on the Airbnb homepage.
  *
  * Selector strategy:
- *  - Prefer data-testid and aria attributes (more stable than generated class names).
- *  - Fall-back CSS selectors are ordered from most-specific to least-specific.
+ * - Prefer data-testid and aria attributes (more stable than generated class
+ * names).
+ * - Fall-back CSS selectors are ordered from most-specific to least-specific.
  */
 public class SearchPanelComponent {
 
     private final WebDriver driver;
 
     // The "Where" / destination input field
-    private static final By WHERE_INPUT =
-            By.cssSelector("input[data-testid='structured-search-input-field-query']," +
-                           "input[placeholder*='Search destinations']," +
-                           "input[name='query']");
+    private static final By WHERE_INPUT = By.cssSelector("input[data-testid='structured-search-input-field-query']," +
+            "input[placeholder*='Search destinations']," +
+            "input[name='query']");
 
     // Auto-suggest dropdown items
-    private static final By SUGGESTIONS =
-            By.cssSelector("[data-testid='option-title']," +
-                           "li[role='option']," +
-                           "div[data-index]");
+    private static final By SUGGESTIONS = By.cssSelector("[data-testid='option-title']," +
+            "li[role='option']," +
+            "div[data-index]");
 
     // A clear/erase button for the destination field (appears after typing)
-    private static final By CLEAR_BTN =
-            By.cssSelector("[data-testid='structured-search-input-field-query-close-button']," +
-                           "button[aria-label*='lear']");
+    private static final By CLEAR_BTN = By
+            .cssSelector("[data-testid='structured-search-input-field-query-close-button']," +
+                    "button[aria-label*='lear']");
 
     // Main search submit button
-    private static final By SEARCH_BTN =
-            By.cssSelector("[data-testid='structured-search-input-search-button']," +
-                           "button[type='submit']");
+    private static final By SEARCH_BTN = By.cssSelector("[data-testid='structured-search-input-search-button']," +
+            "button[type='submit']");
 
     public SearchPanelComponent(WebDriver driver) {
         this.driver = driver;
@@ -50,7 +48,9 @@ public class SearchPanelComponent {
         return WaitUtils.waitForPresence(driver, WHERE_INPUT);
     }
 
-    /** Expands the search modal — required before guests/date fields are reachable. */
+    /**
+     * Expands the search modal — required before guests/date fields are reachable.
+     */
     public void expandSearchModal() {
         List<WebElement> inputs = driver.findElements(WHERE_INPUT);
         if (!inputs.isEmpty()) {
@@ -80,12 +80,22 @@ public class SearchPanelComponent {
 
     /**
      * Selects the first auto-suggest item for the typed destination.
+     * Retries on StaleElementReferenceException because the suggestion list
+     * can re-render between the time it is fetched and the JS click executes.
      */
     public void selectFirstSuggestion() {
-        List<WebElement> suggestions = WaitUtils.waitForPresenceOfAll(driver, SUGGESTIONS);
-        if (!suggestions.isEmpty()) {
-            // JS click bypasses modal-container z-index interception
-            ElementUtils.jsClick(driver, suggestions.get(0));
+        int maxAttempts = 3;
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            try {
+                List<WebElement> suggestions = WaitUtils.waitForPresenceOfAll(driver, SUGGESTIONS);
+                if (!suggestions.isEmpty()) {
+                    ElementUtils.jsClick(driver, suggestions.get(0));
+                }
+                return;
+            } catch (StaleElementReferenceException e) {
+                if (attempt == maxAttempts - 1)
+                    throw e;
+            }
         }
     }
 
@@ -104,8 +114,8 @@ public class SearchPanelComponent {
     public void clickSearchButton() {
         // Pure JS click avoids both modal-container intercept and stale-element races
         ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
-            "var b = document.querySelector('[data-testid=\"structured-search-input-search-button\"]');" +
-            "if (b) b.click();");
+                "var b = document.querySelector('[data-testid=\"structured-search-input-search-button\"]');" +
+                        "if (b) b.click();");
         // Wait for the page to navigate away from the homepage
         try {
             WaitUtils.waitForUrlContains(driver, "/s/");
