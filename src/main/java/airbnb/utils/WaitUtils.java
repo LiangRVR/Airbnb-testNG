@@ -5,6 +5,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.List;
 
 /**
  * Central explicit-wait helpers. All methods use WebDriverWait so
@@ -16,8 +17,14 @@ public final class WaitUtils {
     }
 
     public static WebDriverWait getWait(WebDriver driver) {
-        return new WebDriverWait(driver, Duration.ofSeconds(airbnb.utils.ConfigReader.getExplicitWait()));
+        return new WebDriverWait(driver, Duration.ofSeconds(ConfigReader.getExplicitWait()));
     }
+
+    public static WebDriverWait getWait(WebDriver driver, int seconds) {
+        return new WebDriverWait(driver, Duration.ofSeconds(seconds));
+    }
+
+    // ── Visibility / clickability ─────────────────────────────────────────────
 
     public static WebElement waitForVisible(WebDriver driver, By locator) {
         return getWait(driver).until(ExpectedConditions.visibilityOfElementLocated(locator));
@@ -35,9 +42,17 @@ public final class WaitUtils {
         return getWait(driver).until(ExpectedConditions.elementToBeClickable(element));
     }
 
-    public static boolean waitForUrlContains(WebDriver driver, String fragment) {
-        return getWait(driver).until(ExpectedConditions.urlContains(fragment));
+    // ── Invisibility ──────────────────────────────────────────────────────────
+
+    public static boolean waitForInvisibility(WebDriver driver, By locator) {
+        try {
+            return getWait(driver).until(ExpectedConditions.invisibilityOfElementLocated(locator));
+        } catch (TimeoutException e) {
+            return false;
+        }
     }
+
+    // ── Presence ──────────────────────────────────────────────────────────────
 
     public static boolean waitForPresence(WebDriver driver, By locator) {
         try {
@@ -50,18 +65,85 @@ public final class WaitUtils {
 
     public static boolean waitForPresence(WebDriver driver, By locator, int timeoutSeconds) {
         try {
-            new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds))
-                    .until(ExpectedConditions.presenceOfElementLocated(locator));
+            getWait(driver, timeoutSeconds).until(ExpectedConditions.presenceOfElementLocated(locator));
             return true;
         } catch (TimeoutException e) {
             return false;
         }
     }
 
-    /** Waits until at least one element matching the locator is present in DOM. */
-    public static java.util.List<WebElement> waitForPresenceOfAll(WebDriver driver, By locator) {
+    public static List<WebElement> waitForPresenceOfAll(WebDriver driver, By locator) {
         return getWait(driver).until(ExpectedConditions.presenceOfAllElementsLocatedBy(locator));
     }
+
+    // ── Text presence ─────────────────────────────────────────────────────────
+
+    public static boolean waitForTextPresent(WebDriver driver, By locator, String text) {
+        try {
+            return getWait(driver).until(ExpectedConditions.textToBePresentInElementLocated(locator, text));
+        } catch (TimeoutException e) {
+            return false;
+        }
+    }
+
+    // ── URL conditions ────────────────────────────────────────────────────────
+
+    public static boolean waitForUrlContains(WebDriver driver, String fragment) {
+        return getWait(driver).until(ExpectedConditions.urlContains(fragment));
+    }
+
+    public static boolean waitForUrlMatches(WebDriver driver, String regex) {
+        try {
+            return getWait(driver).until(ExpectedConditions.urlMatches(regex));
+        } catch (TimeoutException e) {
+            return false;
+        }
+    }
+
+    // ── Element count ─────────────────────────────────────────────────────────
+
+    public static boolean waitForElementCount(WebDriver driver, By locator, int expectedCount) {
+        try {
+            getWait(driver).until(ExpectedConditions.numberOfElementsToBe(locator, expectedCount));
+            return true;
+        } catch (TimeoutException e) {
+            return false;
+        }
+    }
+
+    // ── Page readiness ────────────────────────────────────────────────────────
+
+    public static void waitForPageReady(WebDriver driver) {
+        getWait(driver).until(d -> "complete".equals(((JavascriptExecutor) d)
+                .executeScript("return document.readyState")));
+    }
+
+    // ── Safe click (retry on intercept / stale) ───────────────────────────────
+
+    /**
+     * Waits for the element to be clickable, then attempts to click it.
+     * Retries up to 3 times on {@link ElementClickInterceptedException} and
+     * {@link StaleElementReferenceException} before re-throwing.
+     */
+    public static void safeClick(WebDriver driver, By locator) {
+        int maxAttempts = 3;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                waitForClickable(driver, locator).click();
+                return;
+            } catch (ElementClickInterceptedException | StaleElementReferenceException e) {
+                if (attempt == maxAttempts)
+                    throw e;
+                try {
+                    Thread.sleep(300);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
+
+    // ── Convenience visibility check (no throw) ───────────────────────────────
 
     public static boolean isVisible(WebDriver driver, By locator) {
         try {

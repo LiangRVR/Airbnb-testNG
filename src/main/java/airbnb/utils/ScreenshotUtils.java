@@ -5,7 +5,6 @@ import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,10 +14,10 @@ import java.time.format.DateTimeFormatter;
 
 public final class ScreenshotUtils {
 
-    private static final DateTimeFormatter FMT =
-            DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS");
+    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS");
 
-    private ScreenshotUtils() {}
+    private ScreenshotUtils() {
+    }
 
     /**
      * Captures a screenshot and saves it to {@code target/screenshots/}.
@@ -33,8 +32,8 @@ public final class ScreenshotUtils {
             Files.createDirectories(dir);
 
             String timestamp = LocalDateTime.now().format(FMT);
-            String safeName  = testName.replaceAll("[^a-zA-Z0-9_\\-]", "_");
-            Path   target    = dir.resolve(safeName + "_" + timestamp + ".png");
+            String safeName = testName.replaceAll("[^a-zA-Z0-9_\\-]", "_");
+            Path target = dir.resolve(safeName + "_" + timestamp + ".png");
 
             byte[] bytes = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
             Files.write(target, bytes);

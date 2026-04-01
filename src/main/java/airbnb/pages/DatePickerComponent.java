@@ -1,9 +1,7 @@
 package airbnb.pages;
 
-import airbnb.utils.ElementUtils;
 import airbnb.utils.WaitUtils;
 import org.openqa.selenium.*;
-import org.openqa.selenium.support.PageFactory;
 
 import java.util.List;
 
@@ -13,96 +11,101 @@ import java.util.List;
  *
  * Reliability notes:
  * - Past dates carry aria-disabled="true" — we assert that attribute rather
- * than attempting to click them.
+ *   than attempting to click them.
  * - Day cells are selected by aria-label which includes the full date string.
  */
-public class DatePickerComponent {
+public class DatePickerComponent extends BasePage {
 
-    private final WebDriver driver;
-
-    // Triggers the date picker — primary: results page 'little-search-date',
-    // fallback: homepage expanded modal calendar tab
-    private static final By CHECKIN_BTN = By.cssSelector("[data-testid='little-search-date']," +
+    // Check-in trigger: results page 'little-search-date', homepage expanded modal calendar tab,
+    // or the split-dates field
+    private static final By CHECKIN_BTN = By.cssSelector(
+            "[data-testid='little-search-date']," +
             "[data-testid='expanded-searchbar-dates-calendar-tab']," +
             "[data-testid='structured-search-input-field-split-dates-0']," +
             "button[data-testid*='checkin']");
 
-    // Checkout re-uses same trigger since calendar stays open after check-in click
-    private static final By CHECKOUT_BTN = CHECKIN_BTN;
+    // Check-out trigger: split-dates-1 is more specific than re-using the check-in selector
+    private static final By CHECKOUT_BTN = By.cssSelector(
+            "[data-testid='structured-search-input-field-split-dates-1']," +
+            "[data-testid='little-search-date']," +
+            "[data-testid='expanded-searchbar-dates-calendar-tab']");
 
-    // No container data-testid exists — detect by presence of day cells
-    private static final By CALENDAR_CONTAINER = CHECKIN_BTN; // kept for isCalendarOpen() fallback
-
-    // Expanded-panel date tab that appears after clicking the compact
-    // 'little-search-date' trigger
+    // Expanded-panel date tab that appears after clicking the compact trigger
     private static final By EXPANDED_DATE_TAB = By.cssSelector(
             "[data-testid='expanded-searchbar-dates-calendar-tab']," +
-                    "[data-testid='structured-search-input-field-split-dates-0']");
+            "[data-testid='structured-search-input-field-split-dates-0']");
 
     // Day cells: aria-label format "1, Sunday, March 2026. <status>"
-    // Matched by presence of ", " (day/dayname separator) AND " 202" (year prefix)
     private static final By DAY_CELLS = By
             .xpath("//button[contains(@aria-label, ', ') and contains(@aria-label, ' 202')]");
 
-    // Available (not blocked) day cells — does NOT contain "can't be selected"
+    // Available (not blocked) day cells
     private static final By AVAILABLE_DAYS = By
             .xpath("//button[contains(@aria-label, ', ') and contains(@aria-label, ' 202') " +
                     "and not(contains(@aria-label, \"can't be selected\")) " +
                     "and not(@disabled)]");
 
-    // Past/blocked days contain "Past dates" in aria-label (avoids apostrophe
-    // encoding issues)
+    // Past/blocked days contain "Past dates" in aria-label
     private static final By DISABLED_DAYS = By
             .xpath("//button[contains(@aria-label, ', ') and contains(@aria-label, ' 202') " +
                     "and contains(@aria-label, 'Past dates')]");
 
     public DatePickerComponent(WebDriver driver) {
-        this.driver = driver;
-        PageFactory.initElements(driver, this);
+        super(driver);
     }
 
     public void openCheckIn() {
         WebElement btn = WaitUtils.waitForVisible(driver, CHECKIN_BTN);
-        ElementUtils.jsClick(driver, btn);
-        // Quick check: did the click open the calendar directly?
-        // (e.g. already on the expanded panel, or the calendar tab was itself clicked)
+        jsClick(btn);
         if (!WaitUtils.waitForPresence(driver, DAY_CELLS, 4)) {
-            // Fallback: the compact 'little-search-date' trigger only expanded the
-            // search panel — wait for the date tab to become clickable, then click it.
             try {
                 WebElement dateTab = WaitUtils.waitForClickable(driver, EXPANDED_DATE_TAB);
-                ElementUtils.jsClick(driver, dateTab);
-            } catch (TimeoutException ignored) {
-                // Expanded date tab not found; nothing more we can do
-            }
-            // Final wait for calendar cells with full configured timeout
+                jsClick(dateTab);
+            } catch (TimeoutException ignored) {}
             WaitUtils.waitForPresence(driver, DAY_CELLS);
         }
     }
 
     public void openCheckOut() {
-        // Calendar stays open after check-in selection; this re-triggers if needed
-        List<WebElement> btns = driver.findElements(CHECKIN_BTN);
+        List<WebElement> btns = driver.findElements(CHECKOUT_BTN);
         if (!btns.isEmpty()) {
-            ElementUtils.jsClick(driver, btns.get(0));
+            jsClick(btns.get(0));
         }
     }
 
     public boolean isCalendarOpen() {
-        // Calendar is open when day-cell buttons are present in the DOM
         return !driver.findElements(DAY_CELLS).isEmpty();
     }
 
     /**
-     * Clicks the Nth available (not disabled) day cell. Index is 0-based.
-     * Returns the aria-label of the clicked cell for assertion.
+     * Clicks the Nth available (not disabled) day cell for check-in selection.
+     * Index is 0-based. Returns the aria-label of the clicked cell.
+     */
+    public String clickCheckInDay(int index) {
+        return clickAvailableDayAt(index);
+    }
+
+    /**
+     * Clicks the Nth available day cell for check-out selection.
+     * Assumes the calendar is already open after check-in was chosen.
+     * Index is 0-based. Returns the aria-label of the clicked cell.
+     */
+    public String clickCheckOutDay(int index) {
+        return clickAvailableDayAt(index);
+    }
+
+    /**
+     * Legacy convenience alias kept for backward compatibility with existing tests.
      */
     public String clickAvailableDayByIndex(int index) {
+        return clickAvailableDayAt(index);
+    }
+
+    private String clickAvailableDayAt(int index) {
         List<WebElement> available = WaitUtils.waitForPresenceOfAll(driver, AVAILABLE_DAYS);
         if (index < available.size()) {
             String label = available.get(index).getAttribute("aria-label");
-            // JS click bypasses any overlapping modal backdrop
-            ElementUtils.jsClick(driver, available.get(index));
+            jsClick(available.get(index));
             return label != null ? label : "";
         }
         return "";

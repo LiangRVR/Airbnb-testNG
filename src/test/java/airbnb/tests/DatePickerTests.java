@@ -3,7 +3,6 @@ package airbnb.tests;
 import airbnb.base.BaseTest;
 import airbnb.constants.FrameworkConstants;
 import airbnb.pages.DatePickerComponent;
-import airbnb.pages.SearchPanelComponent;
 import airbnb.utils.ConfigReader;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
@@ -16,12 +15,10 @@ import org.testng.annotations.Test;
  */
 public class DatePickerTests extends BaseTest {
 
-      private SearchPanelComponent searchPanel;
       private DatePickerComponent datePicker;
 
       @BeforeMethod(alwaysRun = true)
       public void initPages() {
-            searchPanel = new SearchPanelComponent(driver);
             datePicker = new DatePickerComponent(driver);
             // Navigate to a results page where 'little-search-date' is always present
             driver.get(ConfigReader.getBaseUrl() + "/s/New-York--NY--United-States/homes");

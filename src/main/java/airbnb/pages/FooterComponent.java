@@ -4,34 +4,28 @@ import airbnb.utils.ElementUtils;
 import airbnb.utils.WaitUtils;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.PageFactory;
 
 import java.util.List;
 
 /**
  * Footer component available on the Airbnb homepage and many static pages.
  */
-public class FooterComponent {
-
-    private final WebDriver driver;
+public class FooterComponent extends BasePage {
 
     // Outer footer wrapper — Airbnb renders a <footer> element
     private static final By FOOTER_LOCATOR = By.cssSelector("footer");
 
     // Support section heading — Airbnb renders <h3>Support</h3> in the footer
-    private static final By SUPPORT_SECTION =
-            By.xpath("//footer//h3[contains(., 'Support') or contains(., 'Help')]");
+    private static final By SUPPORT_SECTION = By.xpath("//footer//h3[contains(., 'Support') or contains(., 'Help')]");
 
     // Company / about section — Airbnb renders <h3>Airbnb</h3> in the footer
-    private static final By COMPANY_SECTION =
-            By.xpath("//footer//h3[contains(., 'Airbnb')]");
+    private static final By COMPANY_SECTION = By.xpath("//footer//h3[contains(., 'Airbnb')]");
 
     @FindBy(css = "footer")
     private WebElement footerElement;
 
     public FooterComponent(WebDriver driver) {
-        this.driver = driver;
-        PageFactory.initElements(driver, this);
+        super(driver);
     }
 
     public boolean isFooterVisible() {

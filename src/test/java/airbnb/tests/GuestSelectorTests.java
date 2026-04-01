@@ -3,7 +3,6 @@ package airbnb.tests;
 import airbnb.base.BaseTest;
 import airbnb.constants.FrameworkConstants;
 import airbnb.pages.GuestSelectorComponent;
-import airbnb.pages.SearchPanelComponent;
 import airbnb.utils.ConfigReader;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
@@ -17,11 +16,9 @@ import org.testng.annotations.Test;
 public class GuestSelectorTests extends BaseTest {
 
       private GuestSelectorComponent guestSelector;
-      private SearchPanelComponent searchPanel;
 
       @BeforeMethod(alwaysRun = true)
       public void initPages() {
-            searchPanel = new SearchPanelComponent(driver);
             guestSelector = new GuestSelectorComponent(driver);
             // Navigate to results page where 'little-search-guests' is always present
             driver.get(ConfigReader.getBaseUrl() + "/s/New-York--NY--United-States/homes");

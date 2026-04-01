@@ -11,12 +11,18 @@ import org.openqa.selenium.firefox.FirefoxOptions;
 /**
  * Creates and manages a thread-local WebDriver instance.
  * Supports chrome (default) and firefox.
+ *
+ * Chrome is hardened for CI/headless with --no-sandbox and
+ * --disable-dev-shm-usage.
+ * Window size is always set explicitly so layout is consistent in both local
+ * and headless runs.
  */
 public final class DriverFactory {
 
     private static final ThreadLocal<WebDriver> DRIVER_TL = new ThreadLocal<>();
 
-    private DriverFactory() {}
+    private DriverFactory() {
+    }
 
     public static WebDriver getDriver() {
         if (DRIVER_TL.get() == null) {
@@ -33,22 +39,36 @@ public final class DriverFactory {
             case "firefox" -> {
                 WebDriverManager.firefoxdriver().setup();
                 FirefoxOptions ffOpts = new FirefoxOptions();
-                if (headless) ffOpts.addArguments("--headless");
+                if (headless) {
+                    ffOpts.addArguments("--headless");
+                    ffOpts.addArguments("--width=1920");
+                    ffOpts.addArguments("--height=1080");
+                }
                 driver = new FirefoxDriver(ffOpts);
             }
             default -> {
                 WebDriverManager.chromedriver().setup();
                 ChromeOptions chromeOpts = new ChromeOptions();
-                chromeOpts.addArguments("--start-maximized");
+
+                // Always set a fixed window size for layout consistency
+                chromeOpts.addArguments("--window-size=1920,1080");
+                // CI/container hardening
+                chromeOpts.addArguments("--no-sandbox");
+                chromeOpts.addArguments("--disable-dev-shm-usage");
+                // UX noise suppression
                 chromeOpts.addArguments("--disable-notifications");
                 chromeOpts.addArguments("--disable-popup-blocking");
                 // Suppress "Chrome is being controlled by automated software" bar
-                chromeOpts.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"});
+                chromeOpts.setExperimentalOption("excludeSwitches", new String[] { "enable-automation" });
                 chromeOpts.setExperimentalOption("useAutomationExtension", false);
+
                 if (headless) {
                     chromeOpts.addArguments("--headless=new");
-                    chromeOpts.addArguments("--window-size=1920,1080");
+                } else {
+                    // Maximise only in headed mode; headless uses the fixed --window-size above
+                    chromeOpts.addArguments("--start-maximized");
                 }
+
                 driver = new ChromeDriver(chromeOpts);
             }
         }

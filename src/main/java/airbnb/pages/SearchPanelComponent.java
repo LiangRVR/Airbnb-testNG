@@ -1,10 +1,7 @@
 package airbnb.pages;
 
-import airbnb.utils.ElementUtils;
 import airbnb.utils.WaitUtils;
 import org.openqa.selenium.*;
-import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.PageFactory;
 
 import java.util.List;
 
@@ -14,34 +11,42 @@ import java.util.List;
  * Selector strategy:
  * - Prefer data-testid and aria attributes (more stable than generated class
  * names).
- * - Fall-back CSS selectors are ordered from most-specific to least-specific.
+ * - Fallback CSS selectors are ordered from most-specific to least-specific.
+ * - The overly broad {@code div[data-index]} selector has been removed from
+ * SUGGESTIONS.
  */
-public class SearchPanelComponent {
-
-    private final WebDriver driver;
+public class SearchPanelComponent extends BasePage {
 
     // The "Where" / destination input field
-    private static final By WHERE_INPUT = By.cssSelector("input[data-testid='structured-search-input-field-query']," +
-            "input[placeholder*='Search destinations']," +
-            "input[name='query']");
+    private static final By WHERE_INPUT = By.cssSelector(
+            "input[data-testid='structured-search-input-field-query']," +
+                    "input[placeholder*='Search destinations']," +
+                    "input[name='query']");
 
-    // Auto-suggest dropdown items
-    private static final By SUGGESTIONS = By.cssSelector("[data-testid='option-title']," +
-            "li[role='option']," +
-            "div[data-index]");
+    // Suggestion panel wrapper shown under the destination field
+    private static final By SUGGESTION_PANEL = By.cssSelector(
+            "[data-testid='structured-search-input-field-query-panel']," +
+                    "[role='listbox']");
 
-    // A clear/erase button for the destination field (appears after typing)
-    private static final By CLEAR_BTN = By
-            .cssSelector("[data-testid='structured-search-input-field-query-close-button']," +
+    // Clickable suggestion rows inside the panel
+    private static final By CLICKABLE_SUGGESTIONS = By.cssSelector(
+            "[data-testid='structured-search-input-field-query-panel'] button," +
+                    "[data-testid='structured-search-input-field-query-panel'] [role='button']," +
+                    "[role='listbox'] [role='option']," +
+                    "li[role='option']");
+
+    // Title/text nodes within suggestion rows; kept as a fallback signal only
+    private static final By SUGGESTION_TITLES = By.cssSelector(
+            "[data-testid='option-title']," +
+                    "[data-testid='structured-search-input-field-query-panel'] strong");
+
+    // Clear/erase button for the destination field (appears after typing)
+    private static final By CLEAR_BTN = By.cssSelector(
+            "[data-testid='structured-search-input-field-query-close-button']," +
                     "button[aria-label*='lear']");
 
-    // Main search submit button
-    private static final By SEARCH_BTN = By.cssSelector("[data-testid='structured-search-input-search-button']," +
-            "button[type='submit']");
-
     public SearchPanelComponent(WebDriver driver) {
-        this.driver = driver;
-        PageFactory.initElements(driver, this);
+        super(driver);
     }
 
     public boolean isSearchPanelVisible() {
@@ -54,57 +59,73 @@ public class SearchPanelComponent {
     public void expandSearchModal() {
         List<WebElement> inputs = driver.findElements(WHERE_INPUT);
         if (!inputs.isEmpty()) {
-            ElementUtils.jsClick(driver, inputs.get(0));
+            jsClick(inputs.get(0));
         }
     }
 
     public void clickWhereField() {
-        WebElement input = WaitUtils.waitForVisible(driver, WHERE_INPUT);
-        ElementUtils.jsClick(driver, input);
+        click(WHERE_INPUT);
     }
 
     public void typeDestination(String destination) {
-        WebElement input = WaitUtils.waitForClickable(driver, WHERE_INPUT);
-        input.clear();
-        input.sendKeys(destination);
-    }
-
-    public boolean areSuggestionsVisible() {
-        try {
-            List<WebElement> items = WaitUtils.waitForPresenceOfAll(driver, SUGGESTIONS);
-            return !items.isEmpty();
-        } catch (TimeoutException e) {
-            return false;
-        }
+        clearAndType(WHERE_INPUT, destination);
     }
 
     /**
-     * Selects the first auto-suggest item for the typed destination.
-     * Retries on StaleElementReferenceException because the suggestion list
-     * can re-render between the time it is fetched and the JS click executes.
+     * Waits for suggestion items to appear in the DOM and returns true if at least
+     * one is present.
+     */
+    public boolean areSuggestionsVisible() {
+        return WaitUtils.waitForPresence(driver, SUGGESTION_PANEL, 5)
+                || WaitUtils.waitForPresence(driver, CLICKABLE_SUGGESTIONS, 5)
+                || WaitUtils.waitForPresence(driver, SUGGESTION_TITLES, 5);
+    }
+
+    /**
+     * Waits for suggestions to be visible, then selects the first one.
+     * Uses BasePage safeClick path via WaitUtils to handle StaleElement retries.
      */
     public void selectFirstSuggestion() {
-        int maxAttempts = 3;
-        for (int attempt = 0; attempt < maxAttempts; attempt++) {
-            try {
-                List<WebElement> suggestions = WaitUtils.waitForPresenceOfAll(driver, SUGGESTIONS);
-                if (!suggestions.isEmpty()) {
-                    ElementUtils.jsClick(driver, suggestions.get(0));
-                }
+        // Wait for any suggestion UI to appear first
+        if (!areSuggestionsVisible()) {
+            throw new NoSuchElementException("No destination suggestions became visible");
+        }
+
+        List<WebElement> clickableRows = driver.findElements(CLICKABLE_SUGGESTIONS);
+        for (WebElement row : clickableRows) {
+            if (row.isDisplayed()) {
+                jsClick(row);
                 return;
-            } catch (StaleElementReferenceException e) {
-                if (attempt == maxAttempts - 1)
-                    throw e;
             }
         }
+
+        List<WebElement> titleNodes = driver.findElements(SUGGESTION_TITLES);
+        for (WebElement titleNode : titleNodes) {
+            if (titleNode.isDisplayed()) {
+                jsClick(titleNode);
+                return;
+            }
+        }
+
+        // Final fallback: use keyboard navigation on the destination input.
+        // Airbnb's suggestion rows are occasionally rendered in non-semantic wrappers,
+        // but ArrowDown + Enter still selects the first highlighted result reliably.
+        List<WebElement> inputs = driver.findElements(WHERE_INPUT);
+        if (!inputs.isEmpty()) {
+            WebElement input = inputs.get(0);
+            input.sendKeys(Keys.ARROW_DOWN);
+            input.sendKeys(Keys.ENTER);
+            return;
+        }
+
+        throw new NoSuchElementException("Suggestion panel appeared, but no clickable suggestion row was found");
     }
 
     public void clearDestination() {
         try {
-            WebElement btn = WaitUtils.waitForVisible(driver, CLEAR_BTN);
-            ElementUtils.jsClick(driver, btn);
+            jsClick(CLEAR_BTN);
         } catch (TimeoutException ignored) {
-            // Clear button may not appear; use keyboard shortcut as fallback
+            // Clear button may not appear; fall back to keyboard shortcut
             WebElement input = driver.findElement(WHERE_INPUT);
             input.sendKeys(Keys.CONTROL + "a");
             input.sendKeys(Keys.DELETE);
@@ -112,11 +133,10 @@ public class SearchPanelComponent {
     }
 
     public void clickSearchButton() {
-        // Pure JS click avoids both modal-container intercept and stale-element races
-        ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
+        // JS click avoids modal-container intercept and stale-element races
+        ((JavascriptExecutor) driver).executeScript(
                 "var b = document.querySelector('[data-testid=\"structured-search-input-search-button\"]');" +
                         "if (b) b.click();");
-        // Wait for the page to navigate away from the homepage
         try {
             WaitUtils.waitForUrlContains(driver, "/s/");
         } catch (TimeoutException ignored) {
