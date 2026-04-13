@@ -8,7 +8,7 @@
   Run one class  : mvn test -Dtest=HomePageSmokeTests
   Run one group  : mvn test -Dgroups=smoke
 -->
-<suite name="Airbnb Test Suite" verbose="1" parallel="none">
+<suite name="Airbnb Test Suite" verbose="1" parallel="tests" thread-count="7">
 
     <listeners>
         <listener class-name="airbnb.listeners.TestListener"/>
