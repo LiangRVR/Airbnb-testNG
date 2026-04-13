@@ -62,8 +62,17 @@ public class ListingDetailsPage extends BasePage {
     }
 
     public boolean isOnListingPage() {
-        String url = driver.getCurrentUrl();
-        return url.contains("/rooms/") || url.contains("/vacation-rentals/");
+        // New tabs start as about:blank — wait for the real URL before checking
+        try {
+            new WebDriverWait(driver, Duration.ofSeconds(15))
+                    .until(d -> {
+                        String u = d.getCurrentUrl();
+                        return u.contains("/rooms/") || u.contains("/vacation-rentals/");
+                    });
+            return true;
+        } catch (TimeoutException e) {
+            return false;
+        }
     }
 
     /**

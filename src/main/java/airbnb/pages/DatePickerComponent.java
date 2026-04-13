@@ -11,29 +11,31 @@ import java.util.List;
  *
  * Reliability notes:
  * - Past dates carry aria-disabled="true" — we assert that attribute rather
- *   than attempting to click them.
+ * than attempting to click them.
  * - Day cells are selected by aria-label which includes the full date string.
  */
 public class DatePickerComponent extends BasePage {
 
-    // Check-in trigger: results page 'little-search-date', homepage expanded modal calendar tab,
+    // Check-in trigger: results page 'little-search-date', homepage expanded modal
+    // calendar tab,
     // or the split-dates field
     private static final By CHECKIN_BTN = By.cssSelector(
             "[data-testid='little-search-date']," +
-            "[data-testid='expanded-searchbar-dates-calendar-tab']," +
-            "[data-testid='structured-search-input-field-split-dates-0']," +
-            "button[data-testid*='checkin']");
+                    "[data-testid='expanded-searchbar-dates-calendar-tab']," +
+                    "[data-testid='structured-search-input-field-split-dates-0']," +
+                    "button[data-testid*='checkin']");
 
-    // Check-out trigger: split-dates-1 is more specific than re-using the check-in selector
+    // Check-out trigger: split-dates-1 is more specific than re-using the check-in
+    // selector
     private static final By CHECKOUT_BTN = By.cssSelector(
             "[data-testid='structured-search-input-field-split-dates-1']," +
-            "[data-testid='little-search-date']," +
-            "[data-testid='expanded-searchbar-dates-calendar-tab']");
+                    "[data-testid='little-search-date']," +
+                    "[data-testid='expanded-searchbar-dates-calendar-tab']");
 
     // Expanded-panel date tab that appears after clicking the compact trigger
     private static final By EXPANDED_DATE_TAB = By.cssSelector(
             "[data-testid='expanded-searchbar-dates-calendar-tab']," +
-            "[data-testid='structured-search-input-field-split-dates-0']");
+                    "[data-testid='structured-search-input-field-split-dates-0']");
 
     // Day cells: aria-label format "1, Sunday, March 2026. <status>"
     private static final By DAY_CELLS = By
@@ -55,13 +57,21 @@ public class DatePickerComponent extends BasePage {
     }
 
     public void openCheckIn() {
+        PopupHandler.dismissAll(driver);
         WebElement btn = WaitUtils.waitForVisible(driver, CHECKIN_BTN);
         jsClick(btn);
         if (!WaitUtils.waitForPresence(driver, DAY_CELLS, 4)) {
             try {
                 WebElement dateTab = WaitUtils.waitForClickable(driver, EXPANDED_DATE_TAB);
                 jsClick(dateTab);
-            } catch (TimeoutException ignored) {}
+            } catch (TimeoutException ignored) {
+            }
+            if (!WaitUtils.waitForPresence(driver, DAY_CELLS, 8)) {
+                // Popup may have appeared and interrupted the click — dismiss and retry
+                PopupHandler.dismissAll(driver);
+                btn = WaitUtils.waitForVisible(driver, CHECKIN_BTN);
+                jsClick(btn);
+            }
             WaitUtils.waitForPresence(driver, DAY_CELLS);
         }
     }

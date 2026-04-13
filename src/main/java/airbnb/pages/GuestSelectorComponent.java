@@ -16,39 +16,47 @@ public class GuestSelectorComponent extends BasePage {
     // the overly broad button[aria-label*='guest'] fallback
     private static final By GUESTS_BTN = By.cssSelector(
             "[data-testid='little-search-guests']," +
-            "[data-testid='structured-search-input-field-guests-button']," +
-            "div[data-testid*='guests']");
+                    "[data-testid='structured-search-input-field-guests-button']," +
+                    "div[data-testid*='guests']");
 
     // Stepper buttons — identified by stable aria-label pattern
     private static final By ADULTS_INCREASE = By.cssSelector(
             "[data-testid='stepper-adults-increase-button']," +
-            "button[aria-label*='Increase number of adults']");
+                    "button[aria-label*='Increase number of adults']");
     private static final By ADULTS_DECREASE = By.cssSelector(
             "[data-testid='stepper-adults-decrease-button']," +
-            "button[aria-label*='Decrease number of adults']");
+                    "button[aria-label*='Decrease number of adults']");
     private static final By ADULTS_VALUE = By.cssSelector(
             "[data-testid='stepper-adults-value']," +
-            "span[data-testid*='adults-value']");
+                    "span[data-testid*='adults-value']");
 
     private static final By CHILDREN_INCREASE = By.cssSelector(
             "[data-testid='stepper-children-increase-button']," +
-            "button[aria-label*='Increase number of children']");
+                    "button[aria-label*='Increase number of children']");
     private static final By CHILDREN_VALUE = By.cssSelector(
             "[data-testid='stepper-children-value']," +
-            "span[data-testid*='children-value']");
+                    "span[data-testid*='children-value']");
 
-    // Accessible label showing count while panel is open — prefer the specific a11y label
+    // Accessible label showing count while panel is open — prefer the specific a11y
+    // label
     private static final By GUESTS_SUMMARY = By.cssSelector(
             "[data-testid='stepper-adults-a11y-value-label']," +
-            "[data-testid='stepper-adults-value']");
+                    "[data-testid='stepper-adults-value']");
 
     public GuestSelectorComponent(WebDriver driver) {
         super(driver);
     }
 
     public void openGuestsPanel() {
+        PopupHandler.dismissAll(driver);
         WebElement btn = WaitUtils.waitForVisible(driver, GUESTS_BTN);
         jsClick(btn);
+        // Verify panel opened; if not, dismiss any popup that appeared and retry
+        if (!WaitUtils.waitForPresence(driver, ADULTS_INCREASE, 5)) {
+            PopupHandler.dismissAll(driver);
+            btn = WaitUtils.waitForVisible(driver, GUESTS_BTN);
+            jsClick(btn);
+        }
     }
 
     public boolean isPanelOpen() {
@@ -81,11 +89,13 @@ public class GuestSelectorComponent extends BasePage {
     }
 
     /**
-     * Returns true when the Adults decrement button is disabled (minimum boundary reached).
+     * Returns true when the Adults decrement button is disabled (minimum boundary
+     * reached).
      */
     public boolean isAdultsDecrementDisabled() {
         List<WebElement> btns = driver.findElements(ADULTS_DECREASE);
-        if (btns.isEmpty()) return false;
+        if (btns.isEmpty())
+            return false;
         WebElement btn = btns.get(0);
         return "true".equals(btn.getAttribute("disabled"))
                 || "true".equals(btn.getAttribute("aria-disabled"));
@@ -97,7 +107,8 @@ public class GuestSelectorComponent extends BasePage {
     }
 
     private int parseCounter(List<WebElement> elements) {
-        if (elements.isEmpty()) return -1;
+        if (elements.isEmpty())
+            return -1;
         String text = elements.get(0).getText().trim();
         try {
             return Integer.parseInt(text);
@@ -105,7 +116,10 @@ public class GuestSelectorComponent extends BasePage {
             // Try aria-valuenow as fallback (some Airbnb stepper implementations use it)
             String ariaValue = elements.get(0).getAttribute("aria-valuenow");
             if (ariaValue != null) {
-                try { return Integer.parseInt(ariaValue.trim()); } catch (NumberFormatException ignored) {}
+                try {
+                    return Integer.parseInt(ariaValue.trim());
+                } catch (NumberFormatException ignored) {
+                }
             }
             return -1;
         }
