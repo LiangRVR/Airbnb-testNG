@@ -16,6 +16,7 @@ import java.time.Duration;
  *
  * Handles:
  * - Cookie / consent banners
+ * - "Now you'll see one price" / fees-included notice
  * - Sign-in prompts and locale/translation dialogs
  * - Generic modal overlays via the Escape key
  */
@@ -29,6 +30,11 @@ public final class PopupHandler {
                     "button[id*='accept']," +
                     "button[aria-label*='Accept all']," +
                     "button[aria-label*='Accept cookies']");
+
+    // "Now you'll see one price for your trip" / fees-included notice — dismissed
+    // with "Got it"
+    private static final By GOT_IT_BTN = By.xpath(
+            "//button[normalize-space()='Got it'] | //button[contains(text(),'Got it')]");
 
     // Generic modal close button (sign-in dialog, translation prompt, etc.)
     private static final By MODAL_CLOSE = By.cssSelector(
@@ -46,8 +52,18 @@ public final class PopupHandler {
      */
     public static void dismissAll(WebDriver driver) {
         dismissCookieBanner(driver);
+        dismissGotItNotice(driver);
         dismissModal(driver);
         sendEscapeToBody(driver);
+    }
+
+    private static void dismissGotItNotice(WebDriver driver) {
+        try {
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(POPUP_TIMEOUT_SECONDS));
+            WebElement btn = wait.until(ExpectedConditions.elementToBeClickable(GOT_IT_BTN));
+            btn.click();
+        } catch (Exception ignored) {
+        }
     }
 
     private static void dismissCookieBanner(WebDriver driver) {
