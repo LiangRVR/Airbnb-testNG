@@ -43,8 +43,4 @@ public class HeaderComponent extends BasePage {
         }
     }
 
-    /** Returns the current page title for branding verification. */
-    public String getPageTitle() {
-        return driver.getTitle();
-    }
 }

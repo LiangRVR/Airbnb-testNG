@@ -5,8 +5,6 @@ import airbnb.utils.WaitUtils;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.PageFactory;
 
-import java.util.List;
-
 /**
  * Base class for all page objects. Centralises common WebDriver interactions
  * so individual page classes stay focused on page-specific behaviour.
@@ -24,9 +22,11 @@ public abstract class BasePage {
 
     // ── Click helpers ─────────────────────────────────────────────────────────
 
-    /** Waits for the element to be clickable, then clicks it.
+    /**
+     * Waits for the element to be clickable, then clicks it.
      *
-     * <p>Falls back to a JavaScript click when a blocking overlay intercepts
+     * <p>
+     * Falls back to a JavaScript click when a blocking overlay intercepts
      * the normal click event ({@link ElementClickInterceptedException}).
      */
     protected void click(By locator) {
@@ -53,11 +53,6 @@ public abstract class BasePage {
 
     // ── Input helpers ─────────────────────────────────────────────────────────
 
-    /** Waits for the element, then sends keys without clearing first. */
-    protected void type(By locator, String text) {
-        WaitUtils.waitForClickable(driver, locator).sendKeys(text);
-    }
-
     /** Waits for the element, clears it, then types the provided text. */
     protected void clearAndType(By locator, String text) {
         WebElement el = WaitUtils.waitForClickable(driver, locator);
@@ -70,14 +65,6 @@ public abstract class BasePage {
     /** Waits for visibility, then returns trimmed text. */
     protected String getText(By locator) {
         return WaitUtils.waitForVisible(driver, locator).getText().trim();
-    }
-
-    /**
-     * Returns trimmed text of the first matching element, or empty string if none.
-     */
-    protected String safeGetText(By locator) {
-        List<WebElement> elements = driver.findElements(locator);
-        return elements.isEmpty() ? "" : elements.get(0).getText().trim();
     }
 
     // ── Visibility / presence ─────────────────────────────────────────────────
@@ -98,10 +85,4 @@ public abstract class BasePage {
         return WaitUtils.waitForClickable(driver, locator);
     }
 
-    // ── Scroll ────────────────────────────────────────────────────────────────
-
-    protected void scrollIntoView(WebElement element) {
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].scrollIntoView({block:'center'});", element);
-    }
 }

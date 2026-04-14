@@ -25,13 +25,6 @@ public class DatePickerComponent extends BasePage {
                     "[data-testid='structured-search-input-field-split-dates-0']," +
                     "button[data-testid*='checkin']");
 
-    // Check-out trigger: split-dates-1 is more specific than re-using the check-in
-    // selector
-    private static final By CHECKOUT_BTN = By.cssSelector(
-            "[data-testid='structured-search-input-field-split-dates-1']," +
-                    "[data-testid='little-search-date']," +
-                    "[data-testid='expanded-searchbar-dates-calendar-tab']");
-
     // Expanded-panel date tab that appears after clicking the compact trigger
     private static final By EXPANDED_DATE_TAB = By.cssSelector(
             "[data-testid='expanded-searchbar-dates-calendar-tab']," +
@@ -76,36 +69,13 @@ public class DatePickerComponent extends BasePage {
         }
     }
 
-    public void openCheckOut() {
-        List<WebElement> btns = driver.findElements(CHECKOUT_BTN);
-        if (!btns.isEmpty()) {
-            jsClick(btns.get(0));
-        }
-    }
-
     public boolean isCalendarOpen() {
         return !driver.findElements(DAY_CELLS).isEmpty();
     }
 
     /**
-     * Clicks the Nth available (not disabled) day cell for check-in selection.
+     * Clicks the Nth available (not disabled) day cell.
      * Index is 0-based. Returns the aria-label of the clicked cell.
-     */
-    public String clickCheckInDay(int index) {
-        return clickAvailableDayAt(index);
-    }
-
-    /**
-     * Clicks the Nth available day cell for check-out selection.
-     * Assumes the calendar is already open after check-in was chosen.
-     * Index is 0-based. Returns the aria-label of the clicked cell.
-     */
-    public String clickCheckOutDay(int index) {
-        return clickAvailableDayAt(index);
-    }
-
-    /**
-     * Legacy convenience alias kept for backward compatibility with existing tests.
      */
     public String clickAvailableDayByIndex(int index) {
         return clickAvailableDayAt(index);

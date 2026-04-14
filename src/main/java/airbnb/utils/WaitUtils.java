@@ -42,16 +42,6 @@ public final class WaitUtils {
         return getWait(driver).until(ExpectedConditions.elementToBeClickable(element));
     }
 
-    // ── Invisibility ──────────────────────────────────────────────────────────
-
-    public static boolean waitForInvisibility(WebDriver driver, By locator) {
-        try {
-            return getWait(driver).until(ExpectedConditions.invisibilityOfElementLocated(locator));
-        } catch (TimeoutException e) {
-            return false;
-        }
-    }
-
     // ── Presence ──────────────────────────────────────────────────────────────
 
     public static boolean waitForPresence(WebDriver driver, By locator) {
@@ -76,16 +66,6 @@ public final class WaitUtils {
         return getWait(driver).until(ExpectedConditions.presenceOfAllElementsLocatedBy(locator));
     }
 
-    // ── Text presence ─────────────────────────────────────────────────────────
-
-    public static boolean waitForTextPresent(WebDriver driver, By locator, String text) {
-        try {
-            return getWait(driver).until(ExpectedConditions.textToBePresentInElementLocated(locator, text));
-        } catch (TimeoutException e) {
-            return false;
-        }
-    }
-
     // ── URL conditions ────────────────────────────────────────────────────────
 
     public static boolean waitForUrlContains(WebDriver driver, String fragment) {
@@ -100,47 +80,11 @@ public final class WaitUtils {
         }
     }
 
-    // ── Element count ─────────────────────────────────────────────────────────
-
-    public static boolean waitForElementCount(WebDriver driver, By locator, int expectedCount) {
-        try {
-            getWait(driver).until(ExpectedConditions.numberOfElementsToBe(locator, expectedCount));
-            return true;
-        } catch (TimeoutException e) {
-            return false;
-        }
-    }
-
     // ── Page readiness ────────────────────────────────────────────────────────
 
     public static void waitForPageReady(WebDriver driver) {
         getWait(driver).until(d -> "complete".equals(((JavascriptExecutor) d)
                 .executeScript("return document.readyState")));
-    }
-
-    // ── Safe click (retry on intercept / stale) ───────────────────────────────
-
-    /**
-     * Waits for the element to be clickable, then attempts to click it.
-     * Retries up to 3 times on {@link ElementClickInterceptedException} and
-     * {@link StaleElementReferenceException} before re-throwing.
-     */
-    public static void safeClick(WebDriver driver, By locator) {
-        int maxAttempts = 3;
-        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-            try {
-                waitForClickable(driver, locator).click();
-                return;
-            } catch (ElementClickInterceptedException | StaleElementReferenceException e) {
-                if (attempt == maxAttempts)
-                    throw e;
-                try {
-                    Thread.sleep(300);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-        }
     }
 
     // ── Convenience visibility check (no throw) ───────────────────────────────

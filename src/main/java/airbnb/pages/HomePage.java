@@ -59,7 +59,4 @@ public class HomePage extends BasePage {
         return driver.getTitle();
     }
 
-    public boolean isTitleContains(String keyword) {
-        return driver.getTitle().toLowerCase().contains(keyword.toLowerCase());
-    }
 }

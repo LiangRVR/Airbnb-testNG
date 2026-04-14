@@ -24,11 +24,6 @@ public class ListingDetailsPage extends BasePage {
             "section[aria-label*='Photo']," +
             "button[aria-label*='photo']");
 
-    // Booking panel / price widget
-    private static final By BOOKING_SECTION = By.cssSelector("[data-testid='book-it-default']," +
-            "[data-section-id='BOOK_IT_SIDEBAR']," +
-            "div[data-section-id*='BOOK']");
-
     // Page title heading — prefer h1 only for precision
     private static final By LISTING_TITLE = By.cssSelector("h1");
 
@@ -47,10 +42,6 @@ public class ListingDetailsPage extends BasePage {
 
     public boolean isGalleryVisible() {
         return WaitUtils.isVisible(driver, GALLERY_SECTION);
-    }
-
-    public boolean isBookingSectionVisible() {
-        return WaitUtils.isVisible(driver, BOOKING_SECTION);
     }
 
     public String getListingTitle() {
