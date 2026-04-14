@@ -3,16 +3,27 @@
 
 <!--
   Combined TestNG suite for the Airbnb Selenium automation project.
+  Covers both the public browsing layer and the authenticated user-journey layer.
 
-  Run all tests  : mvn test
-  Run one class  : mvn test -Dtest=HomePageSmokeTests
-  Run one group  : mvn test -Dgroups=smoke
+  Run all tests         : mvn test
+  Run one class         : mvn test -Dtest=HomePageSmokeTests
+  Run smoke only        : mvn test -Dgroups=smoke
+  Run regression only   : mvn test -Dgroups=regression
+  Run functional only   : mvn test -Dgroups=functional
+  Run authenticated     : mvn test -Dgroups=authenticated
+  Run wishlist only     : mvn test -Dgroups=wishlist
+  Run e2e flow          : mvn test -Dgroups=e2e
+  Run headless          : mvn test -Dheadless=true
 -->
 <suite name="Airbnb Test Suite" verbose="1" parallel="tests" thread-count="7">
 
     <listeners>
         <listener class-name="airbnb.listeners.TestListener"/>
     </listeners>
+
+    <!-- ════════════════════════════════════════════════════════════
+         PUBLIC BROWSING LAYER  (original 8 classes — unchanged)
+         ════════════════════════════════════════════════════════════ -->
 
     <!-- ── Smoke ─────────────────────────────────────────────────── -->
     <test name="Homepage Smoke Tests">
@@ -62,6 +73,24 @@
     <test name="Listing Details Tests">
         <classes>
             <class name="airbnb.tests.ListingDetailsTests"/>
+        </classes>
+    </test>
+
+    <!-- ════════════════════════════════════════════════════════════
+         AUTHENTICATED USER-JOURNEY LAYER
+         All authenticated classes run in a SINGLE <test> element so
+         they execute sequentially in one thread.  This prevents
+         concurrent logins to the same Airbnb account which triggers
+         OTP rate-limiting and intermittent TimeoutExceptions.
+         Order: Login → AuthenticatedSearch → Wishlist → Logout
+         ════════════════════════════════════════════════════════════ -->
+
+    <test name="Authenticated Tests" preserve-order="true">
+        <classes>
+            <class name="airbnb.tests.LoginTests"/>
+            <class name="airbnb.tests.AuthenticatedSearchTests"/>
+            <class name="airbnb.tests.WishlistTests"/>
+            <class name="airbnb.tests.LogoutTests"/>
         </classes>
     </test>
 

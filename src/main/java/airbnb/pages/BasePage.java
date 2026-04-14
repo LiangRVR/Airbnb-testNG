@@ -24,9 +24,18 @@ public abstract class BasePage {
 
     // ── Click helpers ─────────────────────────────────────────────────────────
 
-    /** Waits for the element to be clickable, then clicks it. */
+    /** Waits for the element to be clickable, then clicks it.
+     *
+     * <p>Falls back to a JavaScript click when a blocking overlay intercepts
+     * the normal click event ({@link ElementClickInterceptedException}).
+     */
     protected void click(By locator) {
-        WaitUtils.waitForClickable(driver, locator).click();
+        WebElement el = WaitUtils.waitForClickable(driver, locator);
+        try {
+            el.click();
+        } catch (ElementClickInterceptedException e) {
+            ElementUtils.jsClick(driver, el);
+        }
     }
 
     /**
