@@ -99,14 +99,16 @@ public class SearchResultsPage extends BasePage {
     /**
      * Returns true when the current page looks like a search-results page.
      * Requires both URL pattern AND at least one card in the DOM.
+     * Waits briefly for each signal to allow for React re-renders.
      */
     public boolean isOnResultsPage() {
         String url = driver.getCurrentUrl();
         boolean urlMatch = url.contains("/s/") || url.contains("search_type=search_query") || url.contains("?query=");
-        boolean hasResultsSignals = !driver.findElements(ROOM_LINKS).isEmpty()
-            || !driver.findElements(RESULTS_CONTAINER).isEmpty()
-            || !driver.findElements(FILTERS_TRIGGER).isEmpty();
-        return urlMatch && hasResultsSignals;
+        if (!urlMatch)
+            return false;
+        return WaitUtils.waitForPresence(driver, ROOM_LINKS, 5)
+                || WaitUtils.waitForPresence(driver, RESULTS_CONTAINER, 5)
+                || WaitUtils.waitForPresence(driver, FILTERS_TRIGGER, 5);
     }
 
     public String getCurrentUrl() {

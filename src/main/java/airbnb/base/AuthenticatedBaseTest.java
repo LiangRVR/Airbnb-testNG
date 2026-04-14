@@ -121,9 +121,23 @@ public abstract class AuthenticatedBaseTest extends BaseTest {
         PopupHandler.dismissAll(driver);
 
         accountMenu.openMenuAndClickLogin();
-        loginPage.login(
-                CredentialHelper.getTestEmail(),
-                CredentialHelper.getTestPassword());
+        try {
+            loginPage.login(
+                    CredentialHelper.getTestEmail(),
+                    CredentialHelper.getTestPassword());
+        } catch (Exception loginEx) {
+            // Airbnb may skip the password step after a recent OTP verification,
+            // redirecting the browser to the homepage before we can enter a password.
+            // If the user IS actually logged in, treat this as a successful auto-login.
+            if (!accountMenu.isLoggedIn()) {
+                throw new RuntimeException(
+                    "loginPage.login() threw and user is still not authenticated: "
+                    + loginEx.getMessage(), loginEx);
+            }
+            System.out.println("[AuthenticatedBaseTest] Login form threw '"
+                + loginEx.getClass().getSimpleName()
+                + "' but user is authenticated — OTP/magic-link auto-login.");
+        }
         boolean success = loginPage.waitForLoginSuccess();
         PopupHandler.dismissAll(driver);
         // Fail fast so @BeforeMethod gives a clear FAILED (not silent skip)
@@ -138,6 +152,12 @@ public abstract class AuthenticatedBaseTest extends BaseTest {
                 + CredentialHelper.getTestEmail()
                 + "; session cached (" + sharedSession.size() + " cookies)");
     }
+
+    // @AfterMethod invalidation removed: the session restore in
+    // loginWithTestCredentials() already falls back to a full login when
+    // isLoggedIn() returns false, so clearing sharedSession here just forces
+    // an extra OTP login (triggering Airbnb's rate-limit).  Stale sessions
+    // are handled gracefully by the restore logic itself.
 
     /**
      * Logs out via the account menu.

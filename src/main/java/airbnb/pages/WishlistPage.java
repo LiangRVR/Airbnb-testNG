@@ -79,6 +79,8 @@ public class WishlistPage extends BasePage {
                     "button[aria-label*='Save to' i]," +
                     "button[aria-label*='Save listing' i]," +
                     "button[aria-label*='Add to wishlist' i]," +
+                    "button[aria-label*='Saved' i]," + // saved state e.g. "Saved: Lisbon Invites"
+                    "button[aria-label*='Remove from' i]," + // saved state e.g. "Remove from Favourites"
                     "[data-testid='listing-card-save-button']");
 
     public WishlistPage(WebDriver driver) {
@@ -183,7 +185,8 @@ public class WishlistPage extends BasePage {
      * containing "X saved"), then a <em>confirm step</em> with a "Create", "Done",
      * or "View wishlist" button.
      *
-     * <p>This method loops up to 3 times, waiting 5 s per attempt. In each
+     * <p>
+     * This method loops up to 3 times, waiting 5 s per attempt. In each
      * iteration it clicks the highest-priority visible element:
      * <ol>
      * <li>A confirm/submit button (Done / Create / View wishlist)</li>
@@ -194,22 +197,24 @@ public class WishlistPage extends BasePage {
      * If the dialog is still open it loops again, which naturally handles the
      * transition from the selection step to the naming form.
      *
-     * <p>Safe to call when no dialog appears — all waits are silently suppressed.
+     * <p>
+     * Safe to call when no dialog appears — all waits are silently suppressed.
      */
     public void confirmWishlistDialog() {
         final By DIALOG_CARD = By.xpath(
                 "//button[contains(normalize-space(.), ' saved')]");
         final By CREATE_NEW_BTN = By.xpath(
                 "//button[normalize-space()='Create new wishlist']"
-                + " | //button[contains(normalize-space(),'Create new wishlist')]");
-        // All locators that indicate an open dialog; used for "is dialog still open" check
+                        + " | //button[contains(normalize-space(),'Create new wishlist')]");
+        // All locators that indicate an open dialog; used for "is dialog still open"
+        // check
         final By ALL_DIALOG_ELEMENTS = By.xpath(
                 "//button[contains(normalize-space(.), ' saved')]"
-                + " | //button[normalize-space()='Create new wishlist']"
-                + " | //button[contains(normalize-space(),'Create new wishlist')]"
-                + " | //button[normalize-space()='Done']"
-                + " | //button[normalize-space()='Create']"
-                + " | //button[normalize-space()='View wishlist']");
+                        + " | //button[normalize-space()='Create new wishlist']"
+                        + " | //button[contains(normalize-space(),'Create new wishlist')]"
+                        + " | //button[normalize-space()='Done']"
+                        + " | //button[normalize-space()='Create']"
+                        + " | //button[normalize-space()='View wishlist']");
 
         for (int attempt = 0; attempt < 4; attempt++) {
             // ── Find the best visible element in this dialog step ────────────
@@ -220,15 +225,18 @@ public class WishlistPage extends BasePage {
                     // NOT checking isEnabled() because React may keep the button in a DOM-disabled
                     // state even when the name field is pre-filled; we trigger validation below.
                     for (WebElement el : d.findElements(WISHLIST_DIALOG_CONFIRM)) {
-                        if (el.isDisplayed()) return el;
+                        if (el.isDisplayed())
+                            return el;
                     }
                     // Priority 2: existing wishlist card in the selection dialog
                     for (WebElement el : d.findElements(DIALOG_CARD)) {
-                        if (el.isDisplayed()) return el;
+                        if (el.isDisplayed())
+                            return el;
                     }
                     // Priority 3: "Create new wishlist" button
                     for (WebElement el : d.findElements(CREATE_NEW_BTN)) {
-                        if (el.isDisplayed()) return el;
+                        if (el.isDisplayed())
+                            return el;
                     }
                     return null;
                 });
@@ -241,7 +249,7 @@ public class WishlistPage extends BasePage {
             try {
                 List<WebElement> nameInputs = driver.findElements(By.cssSelector(
                         "input[aria-label='Name'],input[aria-label='Wishlist name']," +
-                        "input[aria-label*='ame' i]"));
+                                "input[aria-label*='ame' i]"));
                 for (WebElement ni : nameInputs) {
                     if (ni.isDisplayed()) {
                         ni.click();
@@ -255,7 +263,8 @@ public class WishlistPage extends BasePage {
                         break;
                     }
                 }
-            } catch (Exception ignored) { /* name input optional */ }
+            } catch (Exception ignored) {
+                /* name input optional */ }
 
             try {
                 found.click();
@@ -266,10 +275,10 @@ public class WishlistPage extends BasePage {
             // ── Check whether the dialog closed after this click ──────────────
             // Wait up to 3 s; if ANY dialog element is still visible, loop again.
             try {
-                new WebDriverWait(driver, Duration.ofSeconds(3)).until(d ->
-                        d.findElements(ALL_DIALOG_ELEMENTS).stream()
-                                .noneMatch(org.openqa.selenium.WebElement::isDisplayed)
-                                ? Boolean.TRUE : null);
+                new WebDriverWait(driver, Duration.ofSeconds(3)).until(d -> d.findElements(ALL_DIALOG_ELEMENTS).stream()
+                        .noneMatch(org.openqa.selenium.WebElement::isDisplayed)
+                                ? Boolean.TRUE
+                                : null);
                 break; // Dialog closed — we are done
             } catch (TimeoutException ignored) {
                 // Dialog still has visible elements — loop to handle next step
@@ -321,18 +330,19 @@ public class WishlistPage extends BasePage {
         // Poll for up to 4 seconds to allow post-dialog UI state update
         try {
             return Boolean.TRUE.equals(
-                new WebDriverWait(driver, Duration.ofSeconds(4)).until(d -> {
-                    List<WebElement> buttons = d.findElements(SAVE_BUTTON);
-                    if (buttons.isEmpty()) return null;
-                    WebElement btn = buttons.get(0);
-                    String pressed = btn.getAttribute("aria-pressed");
-                    String label = btn.getAttribute("aria-label");
-                    boolean saved = "true".equalsIgnoreCase(pressed) ||
-                            (label != null && (
-                                    label.toLowerCase().contains("saved") ||
-                                    label.toLowerCase().contains("remove")));
-                    return saved ? Boolean.TRUE : null;
-                }));
+                    new WebDriverWait(driver, Duration.ofSeconds(4)).until(d -> {
+                        List<WebElement> buttons = d.findElements(SAVE_BUTTON);
+                        if (buttons.isEmpty())
+                            return null;
+                        WebElement btn = buttons.get(0);
+                        String pressed = btn.getAttribute("aria-pressed");
+                        String label = btn.getAttribute("aria-label");
+                        boolean saved = "true".equalsIgnoreCase(pressed) ||
+                                (label != null && (label.toLowerCase().contains("saved") ||
+                                        label.toLowerCase().contains("remove") ||
+                                        label.toLowerCase().contains("added"))); // e.g. "Added to wishlist"
+                        return saved ? Boolean.TRUE : null;
+                    }));
         } catch (TimeoutException e) {
             return false;
         }

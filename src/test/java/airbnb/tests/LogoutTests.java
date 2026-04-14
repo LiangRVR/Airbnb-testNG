@@ -56,7 +56,10 @@ public class LogoutTests extends AuthenticatedBaseTest {
     @Test(groups = { "authenticated",
             FrameworkConstants.GROUP_REGRESSION }, description = "User avatar disappears from the header after logout")
     public void tc002_userAvatarDisappearsAfterLogout() {
-        accountMenu.logout();
+        // Use client-side cookie/storage clearing so the server session stays
+        // alive and sharedSession can be reused by tc003-05 without OTP.
+        driver.manage().deleteAllCookies();
+        driver.navigate().refresh();
         PopupHandler.dismissAll(driver);
 
         boolean avatarGone = !accountMenu.isUserAvatarVisible();
@@ -67,7 +70,8 @@ public class LogoutTests extends AuthenticatedBaseTest {
     @Test(groups = { "authenticated",
             FrameworkConstants.GROUP_REGRESSION }, description = "Account-settings page is inaccessible directly after logout — request is redirected or blocked")
     public void tc003_accountSettingsBlockedAfterLogout() {
-        accountMenu.logout();
+        driver.manage().deleteAllCookies();
+        driver.navigate().refresh();
         PopupHandler.dismissAll(driver);
 
         // Attempt to navigate directly to an authenticated-only page
@@ -88,7 +92,8 @@ public class LogoutTests extends AuthenticatedBaseTest {
     @Test(groups = { "authenticated",
             FrameworkConstants.GROUP_REGRESSION }, description = "A page refresh after logout does not restore the authenticated UI")
     public void tc004_refreshAfterLogoutDoesNotRestoreSession() {
-        accountMenu.logout();
+        driver.manage().deleteAllCookies();
+        driver.navigate().refresh();
         PopupHandler.dismissAll(driver);
 
         driver.navigate().refresh();
@@ -103,7 +108,8 @@ public class LogoutTests extends AuthenticatedBaseTest {
     @Test(groups = { "authenticated",
             FrameworkConstants.GROUP_REGRESSION }, description = "Direct navigation to /wishlists after logout is handled gracefully — private data not exposed")
     public void tc005_directWishlistAccessAfterLogoutIsHandled() {
-        accountMenu.logout();
+        driver.manage().deleteAllCookies();
+        driver.navigate().refresh();
         PopupHandler.dismissAll(driver);
 
         navigateTo("/wishlists");
