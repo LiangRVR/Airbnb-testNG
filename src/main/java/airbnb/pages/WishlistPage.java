@@ -274,11 +274,25 @@ public class WishlistPage extends BasePage {
 
             // ── Check whether the dialog closed after this click ──────────────
             // Wait up to 3 s; if ANY dialog element is still visible, loop again.
+            // StaleElementReferenceException means the DOM was replaced — treat
+            // that the same as "not displayed" (dialog closed / step changed).
             try {
-                new WebDriverWait(driver, Duration.ofSeconds(3)).until(d -> d.findElements(ALL_DIALOG_ELEMENTS).stream()
-                        .noneMatch(org.openqa.selenium.WebElement::isDisplayed)
-                                ? Boolean.TRUE
-                                : null);
+                new WebDriverWait(driver, Duration.ofSeconds(3)).until(d -> {
+                    try {
+                        return d.findElements(ALL_DIALOG_ELEMENTS).stream()
+                                .noneMatch(el -> {
+                                    try {
+                                        return el.isDisplayed();
+                                    } catch (org.openqa.selenium.StaleElementReferenceException stale) {
+                                        return false; // stale = DOM changed = treat as not displayed
+                                    }
+                                })
+                                        ? Boolean.TRUE
+                                        : null;
+                    } catch (org.openqa.selenium.StaleElementReferenceException stale) {
+                        return Boolean.TRUE; // Whole element list is stale — dialog closed
+                    }
+                });
                 break; // Dialog closed — we are done
             } catch (TimeoutException ignored) {
                 // Dialog still has visible elements — loop to handle next step

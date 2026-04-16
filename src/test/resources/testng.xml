@@ -15,6 +15,7 @@
   Run e2e flow          : mvn test -Dgroups=e2e
   Run headless          : mvn test -Dheadless=true
 -->
+<!--<suite name="Airbnb Test Suite" verbose="1" parallel="tests" thread-count="7">-->
 <suite name="Airbnb Test Suite" verbose="1" parallel="tests" thread-count="7">
 
     <listeners>
